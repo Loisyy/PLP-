@@ -1,0 +1,92 @@
+
+rer.py
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import streamlit as st
+
+# -----------------------------
+# Streamlit App Title
+# -----------------------------
+st.title("CORD-19 Data Explorer")
+st.write("Interactive exploration of COVID-19 research papers")
+
+# -----------------------------
+# Load Data
+# -----------------------------
+@st.cache_data  # cache for performance
+def load_data(file_path):
+    try:
+        df = pd.read_csv(file_path)
+        df['publish_time'] = pd.to_datetime(df['publish_time'], errors='coerce')
+        df = df.dropna(subset=['publish_time', 'title'])
+        df['year'] = df['publish_time'].dt.year
+        df['abstract_word_count'] = df['abstract'].fillna("").apply(lambda x: len(str(x).split()))
+        return df
+    except FileNotFoundError:
+        st.error("File not found. Please ensure 'metadata.csv' exists in the folder.")
+        return pd.DataFrame()
+
+df = load_data("metadata.csv")
+
+if not df.empty:
+    # -----------------------------
+    # Sidebar: Year Range Filter
+    # -----------------------------
+    min_year = int(df['year'].min())
+    max_year = int(df['year'].max())
+    year_range = st.sidebar.slider("Select year range", min_year, max_year, (min_year, max_year))
+    df_filtered = df[(df['year'] >= year_range[0]) & (df['year'] <= year_range[1])]
+
+    # -----------------------------
+    # Display Data Sample
+    # -----------------------------
+    st.subheader("Sample of Filtered Data")
+    st.dataframe(df_filtered.head(10))
+
+    # -----------------------------
+    # Publications Over Time
+    # -----------------------------
+    st.subheader("Publications by Year")
+    year_counts = df_filtered['year'].value_counts().sort_index()
+    fig, ax = plt.subplots()
+    ax.bar(year_counts.index, year_counts.values, color='skyblue')
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Number of Papers")
+    st.pyplot(fig)
+
+    # -----------------------------
+    # Top Journals
+    # -----------------------------
+    st.subheader("Top 10 Journals")
+    top_journals = df_filtered['journal'].value_counts().head(10)
+    fig, ax = plt.subplots(figsize=(8,4))
+    sns.barplot(x=top_journals.values, y=top_journals.index, ax=ax, palette="viridis")
+    ax.set_xlabel("Number of Papers")
+    ax.set_ylabel("Journal")
+    st.pyplot(fig)
+
+    # -----------------------------
+    # Histogram: Abstract Word Count
+    # -----------------------------
+    st.subheader("Distribution of Abstract Word Count")
+    fig, ax = plt.subplots()
+    ax.hist(df_filtered['abstract_word_count'], bins=50, color='orange', edgecolor='black')
+    ax.set_xlabel("Word Count")
+    ax.set_ylabel("Frequency")
+    st.pyplot(fig)
+
+    # -----------------------------
+    # Scatter Plot: Abstract Word Count vs Year
+    # -----------------------------
+    st.subheader("Abstract Word Count over Years")
+    fig, ax = plt.subplots()
+    sns.scatterplot(x='year', y='abstract_word_count', data=df_filtered, ax=ax)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Abstract Word Count")
+    st.pyplot(fig)
+
+else:
+    st.warning("No data to display.")
+
