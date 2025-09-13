@@ -1,0 +1,32 @@
+se class
+class Smartphone:
+    def __init__(self, brand, model, battery_life):
+        self.brand = brand
+        self.model = model
+        self.battery_life = battery_life  # in hours
+
+    def info(self):
+        return f"{self.brand} {self.model}, Battery: {self.battery_life}h"
+
+    def make_call(self, number):
+        print(f"Calling {number}... 📞")
+
+# Derived class with inheritance
+class SmartphonePro(Smartphone):
+    def __init__(self, brand, model, battery_life, camera_megapixels):
+        super().__init__(brand, model, battery_life)
+        self.camera_megapixels = camera_megapixels
+
+    def take_photo(self):
+        print(f"Taking a photo with {self.camera_megapixels}MP camera 📸")
+
+# Create objects
+phone1 = Smartphone("LoisPhone", "X1", 24)
+phone2 = SmartphonePro("LoisPhone", "X1 Pro", 30, 108)
+
+print(phone1.info())
+phone1.make_call("123-456-7890")
+
+print(phone2.info())
+phone2.take_photo()
+
